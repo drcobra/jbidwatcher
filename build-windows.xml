@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JBidwatcher" basedir='.'>
+<!-- Since properties are inmutable, the first definition of a properties is used! -->
+  <!-- Read computers environment -->
+  <property environment="env" />
+
+  <!-- To build the test tool, go: -->
+  <!--   ant -Dmain.class=com.jbidwatcher.app.JBTool jar -->
+  <property name="main.class" value="com.jbidwatcher.app.JBidWatch" />
+  <property name="build.dir" value="classes" />
+  <property name="src.dir" value="src" />
+  <property name="dest.dir" value="." />
+  <property name="main.dir" value="." />
+  <property name="resource.dir" value="${main.dir}/resources"/>
+  <property name="log.dir" value="logs" />
+  <property name="lib.dir" value="lib" />
+  <property name="sparkle.dir" value="platform/sparkle" />
+  <property name="platform.dir" value="platform" />
+  <property name="JAVADIR" value="src" />
+
+  <property name="app.name"   value="JBidwatcher" />
+  <property name="VER" value="2.99pre5" />
+  <property name="TARSRC" value="jbidwatcher-${VER}" />
+  <property name="INTERMEDIATE" value="${app.name}.jar" />
+  <property name="BINARY" value="${app.name}-${VER}.jar" />
+  <property name="OPT_BIN" value="${app.name}-${VER}_o.jar" />
+  <property name="UNOPT_BIN" value="${app.name}-${VER}_u.jar" />
+  <property name="ZIPFILE" value="${app.name}-${VER}.zip" />
+  <property name="TARFILE" value="${TARSRC}.tar.bz2" />
+  <property name="APPFILE" value="${app.name}-${VER}.app.tar.gz" />
+  <property name="osx.app.name" value="${app.name}.app" />
+  <property name="build.path" value="/tmp/building" />
+  <property name="osx.app.path" value="/tmp/building/${osx.app.name}" />
+  <property name="DMGFILE" value="${app.name}-${VER}.dmg" />
+  <property name="EXEFILE" value="${app.name}-${VER}.exe" />
+  <property name="MANIFEST" value="META-INF/MANIFEST.MF" />
+  <property name="ONEJAR_MANIFEST" value="onejar/META-INF/MANIFEST.MF" />
+
+  <property name="jopt.jar" value="${JAVADIR}/jopt/jopt.jar" />
+  <!-- available file="${jopt.jar}" property="jopt.jar.present"/ -->
+
+  <!-- Read any properties that are local to the used installation -->
+  <!-- This file must not reside in the repository!!! --> 
+  <property file="build-local.properties" />
+
+  <!-- Read properties that are special for this computer -->
+  <!-- It could be placed in the repository -->
+  <property file="build-${env.COMPUTERNAME}.properties" />
+
+  <!-- Read properties that are special for this user -->
+  <!-- It could be placed in the repository -->  
+  <property file="build-${env.USERNAME}.properties" />
+
+  <path id="project.class.path">
+    <pathelement path="${build.dir}" />
+    <pathelement path="${src.dir}" />
+    <pathelement path="${lib.dir}/annotations.jar" />
+    <pathelement path="${lib.dir}/aopalliance.jar" />
+    <pathelement path="${lib.dir}/apple.jar" />
+    <pathelement path="${platform.dir}/nonap.jar" />
+    <pathelement path="${lib.dir}/derby.jar" />
+    <pathelement path="${lib.dir}/guice-3.0.jar" />
+    <pathelement path="${lib.dir}/guice-assistedinject-3.0.jar" />
+    <pathelement path="${lib.dir}/mahalo.jar" />
+    <pathelement path="${lib.dir}/javax.inject.jar" />
+    <pathelement path="${lib.dir}/jsr305-1.3.9.jar" />
+    <pathelement path="${lib.dir}/jDeskMetrics.jar" />
+    <pathelement path="${lib.dir}/txtmark.jar" />
+    <pathelement path="${lib.dir}/jdesktop.jar" />
+    <pathelement path="${lib.dir}/jl1.0.1.jar" />
+    <pathelement path="${lib.dir}/jsoup-1.7.1.jar" />
+    <pathelement path="${lib.dir}/jruby-complete.jar" />
+    <pathelement path="${lib.dir}/jline-2.11.jar" />
+    <pathelement path="${lib.dir}/readline.jar" />
+    <pathelement path="${lib.dir}/json_simple-1.1.jar" />
+    <pathelement path="${lib.dir}/l2fprod-common-fontchooser.jar" />
+    <pathelement path="${lib.dir}/mysql-connector-java-5.1.7-bin.jar" />
+  </path>
+
+  <taskdef name="bundleapp"
+           classname="com.oracle.appbundler.AppBundlerTask"
+           classpath="lib/appbundler-1.0ea.jar"/>
+
+  <target name="init" description="Prepare for build">
+    <tstamp/>
+    <mkdir dir="${build.dir}" />
+    <mkdir dir="${log.dir}" />
+  </target>
+
+  <target name="compile" depends="init">
+    <echo level="info" message="Compiling all classes." />
+    <mkdir dir="${build.dir}" />
+      <javac srcdir="${src.dir}" destdir="${build.dir}" includeantruntime="false" debug="on" source="1.8" target="1.8">
+          <classpath refid="project.class.path" />
+          <include name="**/*.java" />
+      </javac>
+  </target>
+
+
+  <target name="jar-real" depends="compile">
+    <echo level="info" message="Building primary .jar file." />
+    <copy todir="resources/help/" file="COPYING.html" />
+
+    <mkdir dir="META-INF"/>
+
+    <manifest file="${MANIFEST}">
+      <attribute name="Manifest-Version" value="1.0"/>
+      <attribute name="Created-By" value="Morgan Schweers @ Cyberfox Software, Inc"/>
+      <attribute name="Main-Class" value="${main.class}"/>
+      <attribute name="Built-By" value="${user.name}"/>
+    </manifest>
+
+    <jar jarfile="${INTERMEDIATE}" manifest="${MANIFEST}" index="true">
+      <fileset dir="${build.dir}" includes="**/*.class" />
+      <!-- <fileset dir="${lib.dir}" includes="**/*.class" /> -->
+      <fileset dir="${resource.dir}" includes="*.jpg"/>
+      <fileset dir="${resource.dir}" includes="*.sql"/>
+      <fileset dir="${resource.dir}" includes="display.cfg"/>
+      <fileset dir="${resource.dir}" includes="icons/**/*.gif" />
+      <fileset dir="${resource.dir}" includes="icons/**/*.png" />
+      <fileset dir="${resource.dir}" includes="audio/*.mp3" />
+      <fileset dir="${resource.dir}" includes="db/*.sql" />
+      <fileset dir="${resource.dir}" includes="help/*.jpg" />
+      <fileset dir="${resource.dir}" includes="help/*.jbh" />
+      <fileset dir="${resource.dir}" includes="help/*.md" />
+      <fileset dir="${resource.dir}" includes="help/*.html" />
+      <fileset dir="${resource.dir}" includes="jbidwatcher.properties" />
+      <fileset dir="${resource.dir}" includes="ebay_*.properties" />
+    </jar>
+    <delete file="resources/help/COPYING.html" />
+  </target>
+
+  <target name="jar" depends="jar-real">
+    <echo level="info" message="Building envelope .jar file." />
+    <mkdir dir="${build.path}/main" />
+    <copy file="${INTERMEDIATE}" tofile="${build.path}/main/main.jar" />
+
+    <manifest file="${ONEJAR_MANIFEST}">
+      <attribute name="Manifest-Version" value="1.0" />
+      <attribute name="Ant-Version" value="Apache Ant 1.7.0" />
+      <attribute name="Created-By" value="1.4.2_04-b05 (Sun Microsystems Inc.)" />
+      <attribute name="Main-Class" value="com.simontuffs.onejar.Boot" />
+      <attribute name="One-Jar-Expand" value="expand,doc,file.txt" />
+      <attribute name="Built-By" value="${user.name}"/>
+    </manifest>
+
+    <jar jarfile="${BINARY}" manifest="${ONEJAR_MANIFEST}">
+      <fileset dir="${main.dir}/onejar" includes="com/**/*.class" />
+      <fileset dir="${main.dir}/onejar" includes="boot-manifest.mf" />
+      <fileset dir="${build.path}" includes="main/main.jar" />
+      <fileset dir="${main.dir}" includes="lib/*.jar" />
+      <fileset dir="${main.dir}" includes="lib/jbidwatcher/**" />
+    </jar>
+    <delete dir="${build.path}/main" />
+  </target>
+
+  <property name="packaging" value="platform" />
+
+
+  <target name="clean" description="Clean all build products.">
+    <echo level="info" message="Clean all build products." />
+    <delete file="${BINARY}" />
+    <delete file="${INTERMEDIATE}" />
+    <delete file="${UNOPT_BIN}" />
+    <delete file="${TARFILE}" />
+    <delete file="${BINARY}" />
+    <delete file="${APPFILE}" />
+    <delete file="${EXEFILE}" />
+    <delete file="${DMGFILE}" />
+    <delete includeEmptyDirs="true" dir="osx"/>
+    <delete dir="${log.dir}" />
+    <delete dir="${build.dir}" />
+    <delete dir="META-INF" />
+    <!--  Delete intermediate files in case they still are around -->
+    <delete file="${build.path}/main/main.jar" />
+
+  </target>
+
+  <target name="run" description="Start Application">
+    <java fork="true" jar="${BINARY}" args="-Xmx512m -Xms256m"/>
+  </target>
+</project>
